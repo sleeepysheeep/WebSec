@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h2>Your Tasks</h2>
+
+    <form id="taskForm">
+        <div class="form-group">
+            <label for="task">New Task:</label>
+            <input type="text" id="task" class="form-control" placeholder="Enter task" required />
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Add Task</button>
+    </form>
+
+    <h3 class="mt-4">Task List</h3>
+    <ul id="taskList" class="list-group">
+    </ul>
+</div>
+
+<script>
+    function loadTasks() {
+        fetch('/tasks')
+            .then(response => response.json())
+            .then(tasks => {
+                const taskList = document.getElementById('taskList');
+                taskList.innerHTML = '';
+
+                tasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                    li.innerHTML = `
+                        <span>${task.description}</span>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Delete</button>
+                    `;
+                    taskList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error loading tasks:', error));
+    }
+
+    document.getElementById('taskForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const taskDescription = document.getElementById('task').value;
+
+        const taskData = { description: taskDescription };
+        console.log('Sending JSON:', JSON.stringify(taskData));
+
+        fetch('/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ description: taskDescription })
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Task added:', data);
+                document.getElementById('task').value = '';
+                loadTasks();
+            })
+            .catch(error => console.error('Error adding task:', error));
+    });
+
+    function deleteTask(taskId) {
+        fetch(`/tasks/${taskId}`, {
+            method: 'DELETE'
+        })
+            .then(() => {
+                console.log('Task deleted:', taskId);
+                loadTasks();
+            })
+            .catch(error => console.error('Error deleting task:', error));
+    }
+    window.onload = loadTasks;
+</script>
+</body>
+</html>
